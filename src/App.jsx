@@ -25,27 +25,33 @@ const STYLES = {
   tabBar: { display: 'flex', gap: '10px', marginBottom: '30px', background: '#fff', padding: '8px', borderRadius: '15px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
   tab: (active) => ({ padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', backgroundColor: active ? '#1e293b' : 'transparent', color: active ? '#fff' : '#64748b', fontWeight: 'bold', border: 'none' }),
   wordList: { width: '100%', maxWidth: '800px', background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
-  wordRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid #f1f5f9' }
+  wordRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid #f1f5f9' },
+  filterGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }
 };
 
-export default function GermanZenFinal() {
+export default function GermanZenMaster() {
   const [syncCode, setSyncCode] = useState(localStorage.getItem('zen_code'));
   const [allWords, setAllWords] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('session'); // session, manage, list
+  const [activeTab, setActiveTab] = useState('session'); 
   
-  // Auth & Session States
+  // States
   const [inputCode, setInputCode] = useState("");
   const [sessionWords, setSessionWords] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
 
-  // Filters & Search
+  // Filters for Dictionary Tab
+  const [listBook, setListBook] = useState('ყველა');
+  const [listLesson, setListLesson] = useState('ყველა');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState('newest'); // newest, oldest, az
+
+  // Filters for Session Tab
   const [selBook, setSelBook] = useState('ყველა');
   const [selLesson, setSelLesson] = useState('ყველა');
   const [cardLimit, setCardLimit] = useState(20);
-  const [searchTerm, setSearchTerm] = useState("");
 
   // Entry & Edit
   const [newWord, setNewWord] = useState({ de: '', ka: '', gender: '', example: '', book: '', lesson: '' });
@@ -79,7 +85,8 @@ export default function GermanZenFinal() {
     if (allWords.some(w => w.de.toLowerCase() === newWord.de.toLowerCase())) {
       alert("⚠️ ეს სიტყვა უკვე არსებობს!"); return;
     }
-    const updated = [...allWords, { ...newWord, id: Date.now().toString(), level: 1, date: new Date().toLocaleDateString() }];
+    // დამატებისას ვიყენებთ Timestamp-ს სორტირებისთვის
+    const updated = [...allWords, { ...newWord, id: Date.now().toString(), level: 1, timestamp: Date.now(), date: new Date().toLocaleDateString() }];
     setAllWords(updated);
     syncToCloud(updated);
     setNewWord({ de: '', ka: '', gender: '', example: '', book: '', lesson: '' });
@@ -119,16 +126,26 @@ export default function GermanZenFinal() {
     else { setIsSessionActive(false); alert("🏁 სესია დასრულდა!"); }
   };
 
-  // Filters Calculation
+  // დათვლილი ფილტრები
   const books = ['ყველა', ...new Set(allWords.map(w => w.book))];
-  const lessons = ['ყველა', ...new Set(allWords.filter(w => selBook === 'ყველა' || w.book === selBook).map(w => w.lesson))];
+  const getLessons = (book) => ['ყველა', ...new Set(allWords.filter(w => book === 'ყველა' || w.book === book).map(w => w.lesson))];
   
+  // ლექსიკონის ფილტრაციის და სორტირების ლოგიკა
   const filteredList = useMemo(() => {
-    return allWords.filter(w => 
-      w.de?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      w.ka?.toLowerCase().includes(searchTerm.toLowerCase())
-    ).sort((a,b) => a.de.localeCompare(b.de));
-  }, [allWords, searchTerm]);
+    let list = allWords.filter(w => {
+      const matchesSearch = w.de?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            w.ka?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesBook = listBook === 'ყველა' || w.book === listBook;
+      const matchesLesson = listLesson === 'ყველა' || w.lesson === listLesson;
+      return matchesSearch && matchesBook && matchesLesson;
+    });
+
+    if (sortBy === 'newest') list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    if (sortBy === 'oldest') list.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+    if (sortBy === 'az') list.sort((a, b) => a.de.localeCompare(b.de));
+
+    return list;
+  }, [allWords, searchTerm, listBook, listLesson, sortBy]);
 
   if (!syncCode) {
     return (
@@ -181,8 +198,8 @@ export default function GermanZenFinal() {
       {activeTab === 'session' && (
         <div style={{background: 'white', padding: '40px', borderRadius: '30px', width: '400px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.02)'}}>
           <h3 style={{marginBottom: '20px'}}>სესიის მომართვა</h3>
-          <select value={selBook} onChange={e => setSelBook(e.target.value)} style={STYLES.input}>{books.map(b => <option key={b} value={b}>{b}</option>)}</select>
-          <select value={selLesson} onChange={e => setSelLesson(e.target.value)} style={STYLES.input}>{lessons.map(l => <option key={l} value={l}>{l}</option>)}</select>
+          <select value={selBook} onChange={e => {setSelBook(e.target.value); setSelLesson('ყველა');}} style={STYLES.input}>{books.map(b => <option key={b} value={b}>{b}</option>)}</select>
+          <select value={selLesson} onChange={e => setSelLesson(e.target.value)} style={STYLES.input}>{getLessons(selBook).map(l => <option key={l} value={l}>{l}</option>)}</select>
           <div style={{marginBottom:'20px', fontSize:'14px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <span>რაოდენობა:</span>
             <input type="number" value={cardLimit} onChange={e => setCardLimit(e.target.value)} style={{width:'60px', padding:'5px'}}/>
@@ -216,22 +233,44 @@ export default function GermanZenFinal() {
 
       {activeTab === 'list' && (
         <div style={STYLES.wordList}>
+          {/* ძებნის ველი */}
           <input 
-            placeholder="🔍 ძებნა (გერმანულად ან ქართულად)..." 
+            placeholder="🔍 ძებნა (DE ან KA)..." 
             style={STYLES.input} 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
           />
-          <div style={{maxHeight: '60vh', overflowY: 'auto', marginTop: '10px'}}>
+
+          {/* ფილტრების პანელი */}
+          <div style={STYLES.filterGrid}>
+            <select value={listBook} onChange={e => {setListBook(e.target.value); setListLesson('ყველა');}} style={STYLES.input}>
+              {books.map(b => <option key={b} value={b}>{b === 'ყველა' ? 'ყველა წიგნი' : b}</option>)}
+            </select>
+            <select value={listLesson} onChange={e => setListLesson(e.target.value)} style={STYLES.input}>
+              {getLessons(listBook).map(l => <option key={l} value={l}>{l === 'ყველა' ? 'ყველა გაკვეთილი' : `გაკვეთილი ${l}`}</option>)}
+            </select>
+          </div>
+
+          {/* სორტირების პანელი */}
+          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'15px', fontSize:'12px', color:'#64748b'}}>
+            <span>ნაპოვნია: {filteredList.length}</span>
+            <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{border:'none', background:'none', color:'#3b82f6', fontWeight:'bold', cursor:'pointer'}}>
+              <option value="newest">ჯერ ახლები</option>
+              <option value="oldest">ჯერ ძველები</option>
+              <option value="az">A-Z (გერმანული)</option>
+            </select>
+          </div>
+
+          <div style={{maxHeight: '50vh', overflowY: 'auto'}}>
             {filteredList.map(w => (
               <div key={w.id} style={STYLES.wordRow}>
                 <div style={{flex: 1}}>
                   <strong style={{color: STYLES.genderColors[w.gender] || '#1e293b'}}>{w.de}</strong>
-                  <div style={{fontSize: '12px', color: '#64748b'}}>{w.ka}</div>
+                  <div style={{fontSize: '12px', color: '#64748b'}}>{w.ka} <span style={{opacity:0.5, marginLeft:'10px'}}>({w.date})</span></div>
                 </div>
                 <div style={{display:'flex', gap:'10px'}}>
-                  <button onClick={() => handleEditClick(w)} style={{background:'#f1f5f9', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'11px'}}>✏️</button>
-                  <button onClick={() => handleDelete(w.id)} style={{background:'#fee2e2', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'11px'}}>🗑️</button>
+                  <button onClick={() => handleEditClick(w)} style={{background:'#f1f5f9', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}}>✏️</button>
+                  <button onClick={() => handleDelete(w.id)} style={{background:'#fee2e2', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer'}}>🗑️</button>
                 </div>
               </div>
             ))}
