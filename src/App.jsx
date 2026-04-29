@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { initializeApp } from "firebase/app";
 import { getDatabase, ref, get, set } from "firebase/database";
 
-// --- FIREBASE CONFIG (თქვენი მონაცემები) ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyBMi9oH8-aryirYICzU5KbndFX3ks3TAHY",
   authDomain: "germanapp-c2462.firebaseapp.com",
@@ -21,26 +21,35 @@ const STYLES = {
   card: { width: '450px', height: '450px', borderRadius: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.15)', textAlign: 'center', padding: '40px', transition: 'transform 0.2s ease', lineHeight: '1.4', userSelect: 'none' },
   genderColors: { m: '#3b82f6', f: '#ec4899', n: '#10b981', default: '#64748b' },
   input: { padding: '12px', borderRadius: '10px', border: '1px solid #e2e8f0', width: '100%', marginBottom: '10px', fontSize: '14px' },
-  btn: { padding: '14px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }
+  btn: { padding: '12px 24px', borderRadius: '12px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px', transition: '0.2s' },
+  tabBar: { display: 'flex', gap: '10px', marginBottom: '30px', background: '#fff', padding: '8px', borderRadius: '15px', boxShadow: '0 2px 5px rgba(0,0,0,0.05)' },
+  tab: (active) => ({ padding: '10px 20px', borderRadius: '10px', cursor: 'pointer', backgroundColor: active ? '#1e293b' : 'transparent', color: active ? '#fff' : '#64748b', fontWeight: 'bold', border: 'none' }),
+  wordList: { width: '100%', maxWidth: '800px', background: '#fff', borderRadius: '20px', padding: '20px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' },
+  wordRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', borderBottom: '1px solid #f1f5f9' }
 };
 
-export default function GermanZenGeorgian() {
+export default function GermanZenFinal() {
   const [syncCode, setSyncCode] = useState(localStorage.getItem('zen_code'));
   const [allWords, setAllWords] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('session'); // session, manage, list
+  
+  // Auth & Session States
   const [inputCode, setInputCode] = useState("");
-
-  // სესიის და მართვის სტეიტები
   const [sessionWords, setSessionWords] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSessionActive, setIsSessionActive] = useState(false);
-  const [showManager, setShowManager] = useState(false);
-  
+
+  // Filters & Search
   const [selBook, setSelBook] = useState('ყველა');
   const [selLesson, setSelLesson] = useState('ყველა');
   const [cardLimit, setCardLimit] = useState(20);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Entry & Edit
   const [newWord, setNewWord] = useState({ de: '', ka: '', gender: '', example: '', book: '', lesson: '' });
+  const [editingWord, setEditingWord] = useState(null);
 
   useEffect(() => {
     if (syncCode) loadUserData(syncCode);
@@ -50,7 +59,6 @@ export default function GermanZenGeorgian() {
     setLoading(true);
     const userRef = ref(db, `users/${code.toLowerCase()}/words`);
     const snapshot = await get(userRef);
-
     if (snapshot.exists()) {
       setAllWords(Object.values(snapshot.val()));
     } else {
@@ -64,7 +72,7 @@ export default function GermanZenGeorgian() {
     setLoading(false);
   };
 
-  const syncToCloud = (data) => set(ref(db, `users/${syncCode.toLowerCase()}/words`), data);
+  const syncToCloud = (updatedWords) => set(ref(db, `users/${syncCode.toLowerCase()}/words`), updatedWords);
 
   const handleAddManual = (e) => {
     e.preventDefault();
@@ -75,23 +83,30 @@ export default function GermanZenGeorgian() {
     setAllWords(updated);
     syncToCloud(updated);
     setNewWord({ de: '', ka: '', gender: '', example: '', book: '', lesson: '' });
-    alert("✅ სიტყვა დაემატა!");
+    alert("✅ დაემატა!");
   };
 
-  const handleCSV = (e) => {
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const rows = ev.target.result.split('\n').slice(1);
-      const newEntries = rows.map(r => {
-        const [de, ka, gender, example, book, lesson] = r.split(',');
-        return de ? { id: Math.random().toString(), de: de.trim(), ka: ka.trim(), gender: gender.trim(), example: example.trim(), book: book.trim(), lesson: lesson.trim(), level: 1 } : null;
-      }).filter(x => x);
-      const updated = [...allWords, ...newEntries];
+  const handleDelete = (id) => {
+    if (window.confirm("ნამდვილად გსურთ წაშლა?")) {
+      const updated = allWords.filter(w => w.id !== id);
       setAllWords(updated);
       syncToCloud(updated);
-      alert("✅ ფაილი წარმატებით აიტვირთა!");
-    };
-    reader.readAsText(e.target.files[0]);
+    }
+  };
+
+  const handleEditClick = (word) => {
+    setEditingWord({ ...word });
+    setActiveTab('manage');
+    window.scrollTo(0,0);
+  };
+
+  const handleSaveEdit = (e) => {
+    e.preventDefault();
+    const updated = allWords.map(w => w.id === editingWord.id ? editingWord : w);
+    setAllWords(updated);
+    syncToCloud(updated);
+    setEditingWord(null);
+    alert("✅ განახლდა!");
   };
 
   const handleAnswer = (isCorrect) => {
@@ -104,26 +119,31 @@ export default function GermanZenGeorgian() {
     else { setIsSessionActive(false); alert("🏁 სესია დასრულდა!"); }
   };
 
+  // Filters Calculation
   const books = ['ყველა', ...new Set(allWords.map(w => w.book))];
   const lessons = ['ყველა', ...new Set(allWords.filter(w => selBook === 'ყველა' || w.book === selBook).map(w => w.lesson))];
+  
+  const filteredList = useMemo(() => {
+    return allWords.filter(w => 
+      w.de?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+      w.ka?.toLowerCase().includes(searchTerm.toLowerCase())
+    ).sort((a,b) => a.de.localeCompare(b.de));
+  }, [allWords, searchTerm]);
 
-  // --- UI: შესვლა ---
   if (!syncCode) {
     return (
       <div style={STYLES.container}>
-        <h1 style={{marginBottom: '50px', fontWeight: '900'}}>გერმანული ზენი</h1>
-        <form onSubmit={(e) => { e.preventDefault(); setSyncCode(inputCode.toLowerCase()); localStorage.setItem('zen_code', inputCode.toLowerCase()); }} style={{background: 'white', padding: '40px', borderRadius: '24px', width: '350px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.05)'}}>
-          <p style={{marginBottom: '15px', fontSize: '14px', color: '#64748b'}}>შეიყვანეთ თქვენი კოდი:</p>
-          <input placeholder="მაგ: zen ან ichliebedich" style={STYLES.input} onChange={e => setInputCode(e.target.value)} />
-          <button type="submit" style={{...STYLES.btn, background: '#1e293b', color: 'white', width: '100%'}}>შესვლა</button>
+        <h1>გერმანული ზენი</h1>
+        <form onSubmit={(e) => { e.preventDefault(); setSyncCode(inputCode.toLowerCase()); localStorage.setItem('zen_code', inputCode.toLowerCase()); }} style={{background: '#fff', padding: '40px', borderRadius: '24px', textAlign: 'center', boxShadow: '0 10px 25px rgba(0,0,0,0.05)'}}>
+          <input placeholder="შეიყვანეთ კოდი" style={STYLES.input} onChange={e => setInputCode(e.target.value)} />
+          <button type="submit" style={{...STYLES.btn, background: '#1e293b', color: '#fff', width: '100%'}}>შესვლა</button>
         </form>
       </div>
     );
   }
 
-  if (loading) return <div style={STYLES.container}>სინქრონიზაცია...</div>;
+  if (loading) return <div style={STYLES.container}>იტვირთება...</div>;
 
-  // --- UI: სესია ---
   if (isSessionActive) {
     const card = sessionWords[currentIndex];
     return (
@@ -148,59 +168,78 @@ export default function GermanZenGeorgian() {
     );
   }
 
-  // --- UI: მთავარი პანელი ---
   return (
     <div style={STYLES.container}>
-      <div style={{position:'absolute', top:20, right:20, textAlign: 'right'}}>
-        <span style={{fontSize: '11px', color: '#94a3b8'}}>კოდი: {syncCode}</span><br/>
-        <button onClick={() => { localStorage.clear(); window.location.reload(); }} style={{background:'none', border:'none', color:'#3b82f6', fontSize:'11px', cursor:'pointer', textDecoration: 'underline'}}>გამოსვლა</button>
-      </div>
-
-      <h1 style={{marginBottom: '50px', fontWeight: '900'}}>გერმანული ზენი</h1>
+      <h1 style={{marginBottom: '30px', fontWeight: '900'}}>გერმანული ზენი</h1>
       
-      <div style={{background: 'white', padding: '40px', borderRadius: '30px', width: '400px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.02)'}}>
-        <h3 style={{marginBottom: '20px'}}>სესიის მომართვა</h3>
-        <div style={{textAlign: 'left', marginBottom: '10px', fontSize: '13px', color: '#64748b'}}>წიგნი:</div>
-        <select value={selBook} onChange={e => setSelBook(e.target.value)} style={STYLES.input}>{books.map(b => <option key={b} value={b}>{b}</option>)}</select>
-        
-        <div style={{textAlign: 'left', marginBottom: '10px', fontSize: '13px', color: '#64748b'}}>გაკვეთილი:</div>
-        <select value={selLesson} onChange={e => setSelLesson(e.target.value)} style={STYLES.input}>{lessons.map(l => <option key={l} value={l}>{l}</option>)}</select>
-        
-        <div style={{marginBottom:'20px', fontSize:'14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-          <span>სიტყვების რაოდენობა:</span>
-          <input type="number" value={cardLimit} onChange={e => setCardLimit(e.target.value)} style={{width:'60px', padding: '5px', borderRadius: '5px', border: '1px solid #ddd'}}/>
-        </div>
-        
-        <button onClick={() => {
-          const pool = allWords.filter(w => (selBook === 'ყველა' || w.book === selBook) && (selLesson === 'ყველა' || w.lesson === selLesson));
-          if (pool.length === 0) { alert("ამ ფილტრით სიტყვები ვერ მოიძებნა!"); return; }
-          setSessionWords(pool.sort(() => Math.random() - 0.5).slice(0, cardLimit));
-          setIsSessionActive(true); setCurrentIndex(0); setIsFlipped(false);
-        }} style={{...STYLES.btn, background: '#1e293b', color: 'white', width: '100%'}}>სესიის დაწყება 🚀</button>
+      <div style={STYLES.tabBar}>
+        <button onClick={() => setActiveTab('session')} style={STYLES.tab(activeTab === 'session')}>სესია</button>
+        <button onClick={() => setActiveTab('manage')} style={STYLES.tab(activeTab === 'manage')}>მართვა</button>
+        <button onClick={() => setActiveTab('list')} style={STYLES.tab(activeTab === 'list')}>ლექსიკონი ({allWords.length})</button>
       </div>
 
-      <button onClick={() => setShowManager(!showManager)} style={{marginTop:'30px', background:'none', border:'none', textDecoration:'underline', color:'#94a3b8', cursor:'pointer'}}>ლექსიკონის მართვა</button>
+      {activeTab === 'session' && (
+        <div style={{background: 'white', padding: '40px', borderRadius: '30px', width: '400px', textAlign: 'center', boxShadow: '0 4px 6px rgba(0,0,0,0.02)'}}>
+          <h3 style={{marginBottom: '20px'}}>სესიის მომართვა</h3>
+          <select value={selBook} onChange={e => setSelBook(e.target.value)} style={STYLES.input}>{books.map(b => <option key={b} value={b}>{b}</option>)}</select>
+          <select value={selLesson} onChange={e => setSelLesson(e.target.value)} style={STYLES.input}>{lessons.map(l => <option key={l} value={l}>{l}</option>)}</select>
+          <div style={{marginBottom:'20px', fontSize:'14px', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+            <span>რაოდენობა:</span>
+            <input type="number" value={cardLimit} onChange={e => setCardLimit(e.target.value)} style={{width:'60px', padding:'5px'}}/>
+          </div>
+          <button onClick={() => {
+            const pool = allWords.filter(w => (selBook === 'ყველა' || w.book === selBook) && (selLesson === 'ყველა' || w.lesson === selLesson));
+            if (pool.length === 0) return alert("სიტყვები ვერ მოიძებნა!");
+            setSessionWords(pool.sort(() => Math.random() - 0.5).slice(0, cardLimit));
+            setIsSessionActive(true); setCurrentIndex(0); setIsFlipped(false);
+          }} style={{...STYLES.btn, background: '#1e293b', color: 'white', width: '100%'}}>დაწყება 🚀</button>
+        </div>
+      )}
 
-      {showManager && (
-        <div style={{marginTop: '20px', background: 'white', padding: '30px', borderRadius: '24px', width: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)'}}>
-          <h4 style={{marginBottom:'15px'}}>ახალი სიტყვის დამატება</h4>
-          <form onSubmit={handleAddManual}>
-            <input placeholder="გერმანული (მაგ: die Stadt)" style={STYLES.input} value={newWord.de} onChange={e => setNewWord({...newWord, de: e.target.value})} required />
-            <input placeholder="ქართული (მაგ: ქალაქი)" style={STYLES.input} value={newWord.ka} onChange={e => setNewWord({...newWord, ka: e.target.value})} required />
+      {activeTab === 'manage' && (
+        <div style={{background: 'white', padding: '30px', borderRadius: '24px', width: '400px', boxShadow: '0 10px 25px rgba(0,0,0,0.05)'}}>
+          <h4>{editingWord ? "რედაქტირება" : "ახალი სიტყვა"}</h4>
+          <form onSubmit={editingWord ? handleSaveEdit : handleAddManual}>
+            <input placeholder="გერმანული" style={STYLES.input} value={editingWord ? editingWord.de : newWord.de} onChange={e => editingWord ? setEditingWord({...editingWord, de: e.target.value}) : setNewWord({...newWord, de: e.target.value})} required />
+            <input placeholder="ქართული" style={STYLES.input} value={editingWord ? editingWord.ka : newWord.ka} onChange={e => editingWord ? setEditingWord({...editingWord, ka: e.target.value}) : setNewWord({...newWord, ka: e.target.value})} required />
             <div style={{display:'flex', gap:'10px'}}>
-              <input placeholder="სქესი (m/f/n)" style={STYLES.input} value={newWord.gender} onChange={e => setNewWord({...newWord, gender: e.target.value})} />
-              <input placeholder="გაკვეთილი" style={STYLES.input} value={newWord.lesson} onChange={e => setNewWord({...newWord, lesson: e.target.value})} />
+              <input placeholder="სქესი (m/f/n)" style={STYLES.input} value={editingWord ? editingWord.gender : newWord.gender} onChange={e => editingWord ? setEditingWord({...editingWord, gender: e.target.value}) : setNewWord({...newWord, gender: e.target.value})} />
+              <input placeholder="გაკვეთილი" style={STYLES.input} value={editingWord ? editingWord.lesson : newWord.lesson} onChange={e => editingWord ? setEditingWord({...editingWord, lesson: e.target.value}) : setNewWord({...newWord, lesson: e.target.value})} />
             </div>
-            <input placeholder="წიგნი (მაგ: A1.1)" style={STYLES.input} value={newWord.book} onChange={e => setNewWord({...newWord, book: e.target.value})} />
-            <textarea placeholder="მაგალითი..." style={{...STYLES.input, height:'60px', fontFamily: 'inherit'}} value={newWord.example} onChange={e => setNewWord({...newWord, example: e.target.value})} />
-            <button type="submit" style={{...STYLES.btn, background: '#10b981', color: 'white', width: '100%'}}>დამატება</button>
+            <input placeholder="წიგნი" style={STYLES.input} value={editingWord ? editingWord.book : newWord.book} onChange={e => editingWord ? setEditingWord({...editingWord, book: e.target.value}) : setNewWord({...newWord, book: e.target.value})} />
+            <textarea placeholder="მაგალითი..." style={{...STYLES.input, height:'60px'}} value={editingWord ? editingWord.example : newWord.example} onChange={e => editingWord ? setEditingWord({...editingWord, example: e.target.value}) : setNewWord({...newWord, example: e.target.value})} />
+            <button type="submit" style={{...STYLES.btn, background: '#10b981', color: 'white', width: '100%'}}>{editingWord ? "განახლება" : "დამატება"}</button>
+            {editingWord && <button type="button" onClick={() => setEditingWord(null)} style={{background:'none', border:'none', color:'#94a3b8', width:'100%', marginTop:'10px', cursor:'pointer'}}>გაუქმება</button>}
           </form>
-          <div style={{marginTop:'20px', borderTop:'1px solid #eee', paddingTop:'20px'}}>
-            <p style={{fontSize:'12px', color:'#94a3b8', marginBottom: '10px'}}>CSV ფაილის ატვირთვა</p>
-            <input type="file" accept=".csv" onChange={handleCSV} style={{fontSize: '12px'}}/>
+        </div>
+      )}
+
+      {activeTab === 'list' && (
+        <div style={STYLES.wordList}>
+          <input 
+            placeholder="🔍 ძებნა (გერმანულად ან ქართულად)..." 
+            style={STYLES.input} 
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+          <div style={{maxHeight: '60vh', overflowY: 'auto', marginTop: '10px'}}>
+            {filteredList.map(w => (
+              <div key={w.id} style={STYLES.wordRow}>
+                <div style={{flex: 1}}>
+                  <strong style={{color: STYLES.genderColors[w.gender] || '#1e293b'}}>{w.de}</strong>
+                  <div style={{fontSize: '12px', color: '#64748b'}}>{w.ka}</div>
+                </div>
+                <div style={{display:'flex', gap:'10px'}}>
+                  <button onClick={() => handleEditClick(w)} style={{background:'#f1f5f9', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'11px'}}>✏️</button>
+                  <button onClick={() => handleDelete(w.id)} style={{background:'#fee2e2', border:'none', padding:'5px 10px', borderRadius:'5px', cursor:'pointer', fontSize:'11px'}}>🗑️</button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
+
+      <button onClick={() => { localStorage.clear(); window.location.reload(); }} style={{marginTop:'40px', background:'none', border:'none', color:'#94a3b8', cursor:'pointer', fontSize:'11px'}}>გამოსვლა (კოდი: {syncCode})</button>
     </div>
   );
 }
