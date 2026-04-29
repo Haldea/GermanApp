@@ -5,6 +5,8 @@ import { getDatabase, ref, get, set } from "firebase/database";
 // კომპონენტების იმპორტი
 import Card from './components/Card';
 import FilterBar from './components/FilterBar';
+import WordList from './components/WordList';
+import ManageWord from './components/ManageWord';
 
 // --- FIREBASE CONFIG ---
 const firebaseConfig = {
