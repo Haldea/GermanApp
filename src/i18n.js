@@ -10,7 +10,7 @@ export const translations = {
     
     // Login
     enterCode: 'შეიყვანეთ თქვენი წვდომის კოდი',
-    codePlaceholder: 'მაგ: zen ან ichliebedich',
+    codePlaceholder: 'თქვენი კოდი...',
     login: 'შესვლა',
 
     // Projects
@@ -82,6 +82,13 @@ export const translations = {
     sortAZ: 'A–Z',
     noResults: 'სიტყვები ვერ მოიძებნა',
 
+    // CSV Import
+    importCsv: 'CSV-ის იმპორტი',
+    importSuccess: (n) => `✅ ${n} სიტყვა დაემატა!`,
+    importDuplicate: (n) => `⚠️ ${n} სიტყვა გამოტოვებულია (უკვე არსებობს).`,
+    importError: 'CSV ფაილის წაკითხვა ვერ მოხერხდა.',
+    importInvalidFormat: 'არასწორი CSV ფორმატი. საჭიროა სვეტები: DE, KA',
+
     // Gender labels
     genderM: 'der (m)',
     genderF: 'die (f)',
@@ -95,7 +102,7 @@ export const translations = {
     logout: '↩',
 
     enterCode: 'Enter your access code',
-    codePlaceholder: 'e.g. zen or mycode123',
+    codePlaceholder: 'Your code...',
     login: 'Sign in',
 
     projects: 'Projects',
@@ -161,6 +168,13 @@ export const translations = {
     sortOldest: 'Oldest',
     sortAZ: 'A–Z',
     noResults: 'No words found',
+
+    // CSV Import
+    importCsv: 'Import CSV',
+    importSuccess: (n) => `✅ ${n} words added!`,
+    importDuplicate: (n) => `⚠️ ${n} skipped (already exist).`,
+    importError: 'Could not read CSV file.',
+    importInvalidFormat: 'Invalid CSV format. Required columns: DE, KA',
 
     genderM: 'der (m)',
     genderF: 'die (f)',

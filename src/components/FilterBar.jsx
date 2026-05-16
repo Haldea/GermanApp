@@ -7,7 +7,7 @@ const inputStyle = {
   color: 'var(--ink)', fontFamily: 'inherit', fontWeight: 500,
   transition: 'border-color 0.15s ease', boxSizing: 'border-box',
   appearance: 'none',
-  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A89F94' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
+  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A917B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center',
   paddingRight: '36px',
 };
@@ -58,7 +58,7 @@ export default function FilterBar({ books, lessons, selBook, setSelBook, selLess
 
         <button
           onClick={onStart}
-          style={{ width: '100%', padding: '16px', background: 'var(--ink)', color: 'var(--cream)', borderRadius: '18px', border: 'none', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em', marginTop: '8px', transition: 'transform 0.1s ease' }}
+          style={{ width: '100%', padding: '16px', background: 'var(--orange)', color: '#fff', borderRadius: '18px', border: 'none', fontSize: '15px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em', marginTop: '8px', transition: 'transform 0.1s ease', boxShadow: '0 2px 12px rgba(224,123,57,0.3)' }}
           onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
           onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
         >

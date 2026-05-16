@@ -249,6 +249,87 @@ export default function LuminaApp() {
     alert(t.wordUpdated);
   };
 
+  // ── CSV Import ──────────────────────────────────────────────────────────────
+  const handleCsvImport = (file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) { alert(t.importInvalidFormat); return; }
+
+        // Parse header — case-insensitive
+        const headers = lines[0].split(',').map(h => h.trim().toUpperCase());
+        const col = (name) => headers.indexOf(name);
+
+        const idxDE = col('DE'), idxKA = col('KA');
+        if (idxDE === -1 || idxKA === -1) { alert(t.importInvalidFormat); return; }
+
+        const idxGender = col('GENDER');
+        const idxExample = col('EXAMPLE');
+        const idxBook = col('BOOK');
+        const idxLesson = col('LESSON');
+        const idxDate = col('DATE');
+
+        // Parse CSV rows (handles quoted fields)
+        const parseRow = (line) => {
+          const result = [];
+          let current = '';
+          let inQuotes = false;
+          for (let i = 0; i < line.length; i++) {
+            const ch = line[i];
+            if (ch === '"') { inQuotes = !inQuotes; }
+            else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+            else { current += ch; }
+          }
+          result.push(current.trim());
+          return result;
+        };
+
+        const existingDe = new Set(allWords.map(w => w.de?.toLowerCase()));
+        const toAdd = [];
+        let duplicates = 0;
+
+        for (let i = 1; i < lines.length; i++) {
+          const cols = parseRow(lines[i]);
+          const de = cols[idxDE]?.trim();
+          const ka = cols[idxKA]?.trim();
+          if (!de || !ka) continue;
+          if (existingDe.has(de.toLowerCase())) { duplicates++; continue; }
+
+          toAdd.push({
+            de,
+            ka,
+            gender: idxGender !== -1 ? (cols[idxGender]?.trim().toLowerCase() || '') : '',
+            example: idxExample !== -1 ? (cols[idxExample]?.trim() || '') : '',
+            book: idxBook !== -1 ? (cols[idxBook]?.trim() || '') : '',
+            lesson: idxLesson !== -1 ? (cols[idxLesson]?.trim() || '') : '',
+            date: idxDate !== -1 ? (cols[idxDate]?.trim() || new Date().toLocaleDateString()) : new Date().toLocaleDateString(),
+            id: `csv_${Date.now()}_${i}`,
+            level: 1,
+            timestamp: Date.now() + i,
+          });
+          existingDe.add(de.toLowerCase());
+        }
+
+        if (toAdd.length === 0 && duplicates === 0) { alert(t.importInvalidFormat); return; }
+
+        const updated = [...allWords, ...toAdd];
+        setAllWords(updated);
+        syncToCloud(updated);
+
+        let msg = t.importSuccess(toAdd.length);
+        if (duplicates > 0) msg += '\n' + t.importDuplicate(duplicates);
+        alert(msg);
+      } catch (err) {
+        alert(t.importError);
+      }
+    };
+    reader.onerror = () => alert(t.importError);
+    reader.readAsText(file);
+  };
+
   const handleAnswer = (isCorrect) => {
     const updated = [...allWords];
     const idx = updated.findIndex(w => w.id === sessionWords[currentIndex].id);
@@ -291,9 +372,9 @@ export default function LuminaApp() {
   const pillBtn = (active) => ({
     padding: '6px 14px',
     borderRadius: '99px',
-    border: active ? '1.5px solid var(--ink)' : '1px solid var(--cream-border)',
-    background: active ? 'var(--ink)' : 'var(--surface-raised)',
-    color: active ? 'var(--cream)' : 'var(--ink-faint)',
+    border: active ? '1.5px solid var(--orange)' : '1px solid var(--cream-border)',
+    background: active ? 'var(--orange)' : 'var(--surface-raised)',
+    color: active ? '#fff' : 'var(--ink-faint)',
     fontSize: '11px', fontWeight: 700, letterSpacing: '0.1em',
     textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'inherit',
     transition: 'all 0.15s ease',
@@ -365,17 +446,30 @@ export default function LuminaApp() {
           {/* Left: wordmark + project name */}
           <div>
             <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--ink-faint)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: '4px' }}>LUMINA</div>
-            <button
-              onClick={() => setShowProjectSwitcher(true)}
-              style={{ display: 'flex', alignItems: 'baseline', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}
-            >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
               <h1 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 'clamp(22px, 5vw, 28px)', color: 'var(--ink)', letterSpacing: '-0.03em', margin: 0 }}>
                 {activeProject?.name || '—'}
               </h1>
-              <span style={{ fontSize: '13px', color: 'var(--ink-faint)', fontWeight: 600 }}>↕</span>
-            </button>
+              <button
+                onClick={() => setShowProjectSwitcher(true)}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  background: 'var(--orange)', color: '#fff',
+                  border: 'none', borderRadius: '99px',
+                  padding: '5px 12px', fontSize: '11px', fontWeight: 700,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  boxShadow: '0 2px 8px rgba(224,123,57,0.3)',
+                  transition: 'opacity 0.15s ease',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                ⇄ {t.switchProject}
+              </button>
+            </div>
             {activeProject?.targetLang && (
-              <div style={{ fontSize: '12px', color: 'var(--ink-faint)', marginTop: '3px', letterSpacing: '0.02em' }}>
+              <div style={{ fontSize: '12px', color: 'var(--ink-faint)', marginTop: '4px', letterSpacing: '0.02em' }}>
                 {activeProject.targetLang}{activeProject.nativeLang ? ` ↔ ${activeProject.nativeLang}` : ''}
               </div>
             )}
@@ -413,7 +507,7 @@ export default function LuminaApp() {
             <button
               key={tab.id}
               onClick={() => { setActiveTab(tab.id); setEditingWord(null); }}
-              style={{ padding: '10px 20px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', letterSpacing: '0.02em', transition: 'all 0.18s ease', background: activeTab === tab.id ? 'var(--ink)' : 'transparent', color: activeTab === tab.id ? 'var(--cream)' : 'var(--ink-faint)' }}
+              style={{ padding: '10px 20px', borderRadius: '14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: 700, fontFamily: 'inherit', letterSpacing: '0.02em', transition: 'all 0.18s ease', background: activeTab === tab.id ? 'var(--orange)' : 'transparent', color: activeTab === tab.id ? '#fff' : 'var(--ink-faint)', boxShadow: activeTab === tab.id ? '0 2px 10px rgba(224,123,57,0.25)' : 'none' }}
             >
               {tab.id === 'list' ? `${tab.label} (${allWords.length})` : tab.label}
             </button>
@@ -422,7 +516,7 @@ export default function LuminaApp() {
       )}
 
       {/* Content */}
-      <main style={{ width: '100%', display: 'flex', justifyContent: 'center', padding: '0 16px' }}>
+      <main style={{ width: '100%', maxWidth: '720px', display: 'flex', justifyContent: 'center', padding: '0 24px', boxSizing: 'border-box' }}>
         <AnimatePresence mode="wait">
           {isSessionActive ? (
             <motion.div key="card" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} transition={{ duration: 0.3, ease: [0.23, 1, 0.32, 1] }} style={{ width: '100%', maxWidth: '420px', paddingTop: '32px' }}>
@@ -437,8 +531,8 @@ export default function LuminaApp() {
               <ManageWord editingWord={editingWord} setEditingWord={setEditingWord} newWord={newWord} setNewWord={setNewWord} handleSaveEdit={handleSaveEdit} handleAddManual={handleAddManual} t={t} />
             </motion.div>
           ) : (
-            <motion.div key="list" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ width: '100%' }}>
-              <WordList searchTerm={searchTerm} setSearchTerm={setSearchTerm} listBook={listBook} setListBook={setListBook} listLesson={listLesson} setListLesson={setListLesson} books={books} getLessons={getLessons} filteredList={filteredList} handleEditClick={handleEditClick} handleDelete={handleDelete} sortBy={sortBy} setSortBy={setSortBy} t={t} />
+            <motion.div key="list" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ width: '100%', maxWidth: '720px' }}>
+              <WordList searchTerm={searchTerm} setSearchTerm={setSearchTerm} listBook={listBook} setListBook={setListBook} listLesson={listLesson} setListLesson={setListLesson} books={books} getLessons={getLessons} filteredList={filteredList} handleEditClick={handleEditClick} handleDelete={handleDelete} sortBy={sortBy} setSortBy={setSortBy} handleCsvImport={handleCsvImport} t={t} />
             </motion.div>
           )}
         </AnimatePresence>

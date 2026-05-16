@@ -6,32 +6,35 @@
 @tailwind utilities;
 
 :root {
-  /* LUMINA Color System */
-  --cream: #F5F0EA;
-  --cream-dark: #EDE7DE;
-  --cream-border: #E2D9CE;
-  --ink: #1A1714;
-  --ink-muted: #6B6359;
-  --ink-faint: #A89F94;
+  /* LUMINA Color System — Earthy Warm Palette */
+  --cream: #F5EFE0;
+  --cream-dark: #EDE3CE;
+  --cream-border: #DACED4;
+  --ink: #2C3B2D;
+  --ink-muted: #4A5E4B;
+  --ink-faint: #7A917B;
 
-  /* Gender Accent Colors — muted, cultivated */
+  /* Gender Accent Colors */
   --masc: #4A7FA5;
   --masc-light: #EBF3FA;
   --fem: #A5607A;
   --fem-light: #FAF0F4;
-  --neut: #4E8C6E;
-  --neut-light: #EDF6F1;
+  --neut: #5E8C5A;
+  --neut-light: #EDF6EB;
 
   /* Interactive */
-  --accent: #2D2926;
-  --accent-hover: #1A1714;
-  --success: #4E8C6E;
+  --accent: #2C3B2D;
+  --accent-hover: #1A2A1B;
+  --success: #5E8C5A;
   --danger: #C25B5B;
 
+  /* Brand orange accent (from reference) */
+  --orange: #E07B39;
+  --orange-light: #FDF0E6;
+
   /* Surfaces */
-  --surface: #FDFAF6;
+  --surface: #FAF5EA;
   --surface-raised: #FFFFFF;
-  --shadow-color: 35deg 30% 20%;
 }
 
 * {
@@ -47,6 +50,10 @@ body {
   font-optical-sizing: auto;
 }
 
+/* Highlight accent for active/selected states */
+.lumina-accent-bg { background: var(--orange) !important; color: #fff !important; }
+.lumina-accent-text { color: var(--orange) !important; }
+
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -56,7 +63,7 @@ body {
 /* Select styling */
 select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A89F94' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A917B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 14px center;
   padding-right: 36px !important;

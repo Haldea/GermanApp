@@ -96,7 +96,7 @@ export default function ProjectSwitcher({ projects, activeProject, onSelect, onC
                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     padding: '14px 16px',
                     borderRadius: '16px',
-                    border: isActive ? '1.5px solid var(--ink)' : '1px solid var(--cream-border)',
+                    border: isActive ? '1.5px solid var(--orange)' : '1px solid var(--cream-border)',
                     background: isActive ? 'var(--cream-dark)' : 'var(--cream)',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease',
@@ -111,7 +111,7 @@ export default function ProjectSwitcher({ projects, activeProject, onSelect, onC
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     {isActive && (
-                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--ink)' }} />
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--orange)' }} />
                     )}
                     <button
                       onClick={(e) => { e.stopPropagation(); onDelete(p); }}
@@ -134,17 +134,19 @@ export default function ProjectSwitcher({ projects, activeProject, onSelect, onC
           <button
             onClick={() => setShowForm(v => !v)}
             style={{
-              width: '100%', padding: '12px',
-              background: 'transparent',
-              border: '1.5px dashed var(--cream-border)',
+              width: '100%', padding: '13px',
+              background: showForm ? 'var(--cream)' : 'var(--orange)',
+              border: showForm ? '1px solid var(--cream-border)' : 'none',
               borderRadius: '16px', cursor: 'pointer',
-              fontSize: '13px', fontWeight: 700, color: 'var(--ink-faint)',
+              fontSize: '13px', fontWeight: 700,
+              color: showForm ? 'var(--ink-faint)' : '#fff',
               fontFamily: 'inherit', letterSpacing: '0.04em',
               marginBottom: showForm ? '20px' : '0',
               transition: 'all 0.15s ease',
+              boxShadow: showForm ? 'none' : '0 2px 10px rgba(224,123,57,0.3)',
             }}
           >
-            {showForm ? '↑ გაქრობა' : `+ ${t.newProject}`}
+            {showForm ? '↑ დახურვა' : `+ ${t.newProject}`}
           </button>
         )}
 
@@ -198,10 +200,11 @@ export default function ProjectSwitcher({ projects, activeProject, onSelect, onC
                 <button
                   type="submit"
                   style={{
-                    padding: '14px', background: 'var(--ink)', color: 'var(--cream)',
+                    padding: '14px', background: 'var(--orange)', color: '#fff',
                     borderRadius: '16px', border: 'none', fontSize: '14px',
                     fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
                     letterSpacing: '0.02em', marginTop: '4px',
+                    boxShadow: '0 2px 10px rgba(224,123,57,0.3)',
                   }}
                 >
                   {t.createProject}

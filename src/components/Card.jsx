@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const genderPalette = {
   m: { bg: '#EBF3FA', accent: '#4A7FA5', label: 'der' },
   f: { bg: '#FAF0F4', accent: '#A5607A', label: 'die' },
-  n: { bg: '#EDF6F1', accent: '#4E8C6E', label: 'das' },
-  default: { bg: '#F5F0EA', accent: '#6B6359', label: '—' },
+  n: { bg: '#EDF6EB', accent: '#5E8C5A', label: 'das' },
+  default: { bg: '#F5EFE0', accent: '#7A917B', label: '—' },
 };
 
 export default function Card({ card, isFlipped, setIsFlipped, handleAnswer, onCancel, total, current, t }) {
@@ -76,7 +76,7 @@ export default function Card({ card, isFlipped, setIsFlipped, handleAnswer, onCa
             <button onClick={() => handleAnswer(false)} style={{ flex: 1, padding: '16px', background: '#FFF5F5', color: 'var(--danger)', border: '1px solid #F5CECE', borderRadius: '18px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em' }}>
               {t.dontKnow}
             </button>
-            <button onClick={() => handleAnswer(true)} style={{ flex: 1, padding: '16px', background: '#F0FAF5', color: 'var(--success)', border: '1px solid #C4E8D5', borderRadius: '18px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em' }}>
+            <button onClick={() => handleAnswer(true)} style={{ flex: 1, padding: '16px', background: '#EDF6EB', color: 'var(--success)', border: '1px solid #BEE0B8', borderRadius: '18px', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em' }}>
               {t.know}
             </button>
           </motion.div>

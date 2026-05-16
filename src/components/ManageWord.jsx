@@ -11,7 +11,7 @@ const inputStyle = {
 const selectStyle = {
   ...inputStyle,
   appearance: 'none',
-  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23A89F94' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
+  backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237A917B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E\")",
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 14px center',
   paddingRight: '36px',
 };
@@ -80,7 +80,7 @@ export default function ManageWord({ editingWord, setEditingWord, newWord, setNe
             <textarea style={{ ...inputStyle, height: '88px', resize: 'none' }} placeholder={t.examplePlaceholder} value={data.example} onChange={e => handleChange('example', e.target.value)} onFocus={focus} onBlur={blur} />
           </div>
 
-          <button type="submit" style={{ padding: '16px', background: 'var(--success)', color: '#fff', borderRadius: '18px', border: 'none', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em', marginTop: '4px', transition: 'transform 0.1s ease' }}
+          <button type="submit" style={{ padding: '16px', background: 'var(--orange)', color: '#fff', borderRadius: '18px', border: 'none', fontSize: '14px', fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.02em', marginTop: '4px', transition: 'transform 0.1s ease', boxShadow: '0 2px 10px rgba(224,123,57,0.3)' }}
             onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
             onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
           >
