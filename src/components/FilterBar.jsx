@@ -45,7 +45,7 @@ export default function FilterBar({ books, lessons, selBook, setSelBook, selLess
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {[['−', -5], ['+', 5]].map(([sym, delta], i) => (
               i === 0 ? (
-                <button key={sym} onClick={() => setCardLimit(Math.max(1, +cardLimit + delta))} style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--cream)', border: '1px solid var(--cream-border)', color: 'var(--ink-muted)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{sym}</button>
+                <button key={sym} onClick={() => setCardLimit(Math.max(5, +cardLimit + delta))} style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'var(--cream)', border: '1px solid var(--cream-border)', color: 'var(--ink-muted)', fontSize: '18px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}>{sym}</button>
               ) : (
                 <>
                   <span style={{ fontFamily: "'DM Serif Display', serif", fontSize: '22px', color: 'var(--ink)', minWidth: '32px', textAlign: 'center' }}>{cardLimit}</span>
